@@ -1,0 +1,30 @@
+# Virtual environment
+python_venv/
+venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Test files to exclude
+src/webcam_test.py
+src/ear_test.py
+src/face_mesh_test.py
