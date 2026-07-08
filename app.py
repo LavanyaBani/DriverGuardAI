@@ -93,7 +93,7 @@ st.divider()
 
 
 
-model = joblib.load("MODEL_PATH")
+model = joblib.load(MODEL_PATH)
 
 
 mp_face_mesh = mp.solutions.face_mesh
