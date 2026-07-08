@@ -85,7 +85,7 @@ while True:
 
     total_frames += 1
 
-    rgb = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     results = face_mesh.process(rgb)
 
@@ -102,9 +102,7 @@ while True:
 
         left_eye = []
 
-       
         # EYE LANDMARKS
-      
 
         for idx in LEFT_EYE:
 
@@ -115,17 +113,13 @@ while True:
 
             left_eye.append((x, y))
 
-            cv2.circle(frame,(x, y), 2,(0, 255, 0),-1 )
+            cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
 
-      
         # EAR
-        
 
         ear = calculate_ear(left_eye)
 
-       
         # BLINK DETECTION
-      
 
         if ear < EAR_THRESHOLD:
 
@@ -150,25 +144,19 @@ while True:
             eye_closed_start = None
             closure_duration = 0
 
-      
         # BLINK RATE
-     
 
         elapsed_minutes = (time.time() - start_time) / 60
 
         if elapsed_minutes > 0:
 
-            blink_rate = (blink_count /elapsed_minutes)
+            blink_rate = (blink_count / elapsed_minutes)
 
-       
         # PERCLOS
-      
 
         perclos = (closed_eye_frames / total_frames) * 100
 
-    
         # ML PREDICTION
-     
 
         try:
 
@@ -193,36 +181,44 @@ while True:
             print(e)
 
         # FATIGUE SCORE
-        fatigue_score = ((1 - min(ear, 0.4) / 0.4) * 40 + min(perclos, 100) * 0.4 +min(closure_duration, 5) * 10)
+        fatigue_score = ((1 - min(ear, 0.4) / 0.4) * 40 +
+                         min(perclos, 100) * 0.4 + min(closure_duration, 5) * 10)
 
-        fatigue_score = max( 0, min(100, fatigue_score))
+        fatigue_score = max(0, min(100, fatigue_score))
 
-    
         # STATUS COLOR
-    
+
         status_color = (
             (0, 255, 0)
             if status == "ALERT"
-            else (0, 0, 255) )
+            else (0, 0, 255))
 
         # DISPLALY
-        cv2.putText(frame, f"EAR: {ear:.2f}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        cv2.putText(frame, f"EAR: {ear:.2f}", (20, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-        cv2.putText(frame, f"Blinks: {blink_count}", (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+        cv2.putText(frame, f"Blinks: {blink_count}", (20, 80),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
-        cv2.putText(frame, f"Blink Rate: {blink_rate:.1f}/min", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        cv2.putText(frame, f"Blink Rate: {blink_rate:.1f}/min",
+                    (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
-        cv2.putText(frame, f"Closure: {closure_duration:.2f}s",(20, 160),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0, 255, 255),2)
+        cv2.putText(frame, f"Closure: {closure_duration:.2f}s",
+                    (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
-        cv2.putText(frame, f"PERCLOS: {perclos:.1f}%", (20, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+        cv2.putText(frame, f"PERCLOS: {perclos:.1f}%", (20, 200),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
-        cv2.putText(frame, f"Status: {status}", (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, status_color, 2)
+        cv2.putText(frame, f"Status: {status}", (20, 250),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, status_color, 2)
 
-        cv2.putText(frame, f"Fatigue Score: {fatigue_score:.0f}%", (20, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(frame, f"Fatigue Score: {fatigue_score:.0f}%", (
+            20, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         # WARNING
         if fatigue_score > 70:
 
-            cv2.putText(frame, "WARNING! DROWSINESS DETECTED", (20, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 3)
+            cv2.putText(frame, "WARNING! DROWSINESS DETECTED",
+                        (20, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 3)
 
     cv2.imshow("DriverGuard AI", frame)
 

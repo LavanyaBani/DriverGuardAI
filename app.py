@@ -1,3 +1,8 @@
+from src.utils import (
+    calculate_ear,
+    calculate_fatigue_score,
+    get_recommendation
+)
 import streamlit as st
 import cv2
 import mediapipe as mp
@@ -6,11 +11,7 @@ import joblib
 
 import os
 
-BASE_DIR = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MODEL_PATH = os.path.join(
     BASE_DIR,
@@ -18,11 +19,6 @@ MODEL_PATH = os.path.join(
     "fatigue_model.pkl"
 )
 
-from src.utils import (
-    calculate_ear,
-    calculate_fatigue_score,
-    get_recommendation
-)
 
 # PAGE CONFIG
 
@@ -32,7 +28,6 @@ st.set_page_config(
     page_icon=" ",
     layout="wide"
 )
-
 
 
 st.markdown("""
@@ -61,8 +56,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-
-
 st.sidebar.title(" DriverGuard AI")
 
 st.sidebar.markdown("---")
@@ -78,7 +71,6 @@ st.sidebar.write("Version 1.0")
 st.sidebar.write("AI Internship Project")
 
 
-
 st.markdown(
     '<div class="big-title">🚗 DriverGuard AI</div>',
     unsafe_allow_html=True
@@ -92,6 +84,9 @@ st.markdown(
 st.divider()
 
 
+print("BASE_DIR =", BASE_DIR)
+print("MODEL_PATH =", MODEL_PATH)
+print("EXISTS =", os.path.exists(MODEL_PATH))
 
 model = joblib.load(MODEL_PATH)
 
@@ -103,29 +98,34 @@ face_mesh = mp_face_mesh.FaceMesh(
     refine_landmarks=True
 )
 
-LEFT_EYE = [33,160,158,133,153,144]
-
+LEFT_EYE = [33, 160, 158, 133, 153, 144]
 
 
 if st.button("▶ Start Monitoring"):
 
     cap = cv2.VideoCapture(0)
 
-    frame_placeholder = st.empty()
+    # Main dashboard row
 
-    # Top Metrics
+    left_col, right_col = st.columns([2, 1])
 
-    m1,m2,m3 = st.columns(3)
+    with left_col:
+        frame_placeholder = st.empty()
 
-    status_placeholder = m1.empty()
-    fatigue_placeholder = m2.empty()
-    confidence_placeholder = m3.empty()
+    with right_col:
+        status_placeholder = st.empty()
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        fatigue_placeholder = st.empty()
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        confidence_placeholder = st.empty()
 
     st.divider()
 
-  
-
-    e1,e2,e3,e4 = st.columns(4)
+    e1, e2, e3, e4 = st.columns(4)
 
     ear_placeholder = e1.empty()
     blink_placeholder = e2.empty()
@@ -179,7 +179,7 @@ if st.button("▶ Start Monitoring"):
 
             face = results.multi_face_landmarks[0]
 
-            h,w,_ = frame.shape
+            h, w, _ = frame.shape
 
             eye_points = []
 
@@ -191,13 +191,13 @@ if st.button("▶ Start Monitoring"):
 
                 y = int(landmark.y * h)
 
-                eye_points.append((x,y))
+                eye_points.append((x, y))
 
                 cv2.circle(
                     frame,
-                    (x,y),
+                    (x, y),
                     2,
-                    (0,255,0),
+                    (0, 255, 0),
                     -1
                 )
 
@@ -285,14 +285,38 @@ if st.button("▶ Start Monitoring"):
 
             if status == "ALERT":
 
-                status_placeholder.success(
-                    f"🟢 {status}"
+                status_placeholder.markdown(
+                    f"""
+                    <div style="
+                        background:#163f25;
+                        padding:20px;
+                        border-radius:12px;
+                        text-align:center;
+                        color:white;
+                        font-size:28px;
+                        font-weight:bold;">
+                        🟢 {status}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
             else:
 
-                status_placeholder.error(
-                    f"🔴 {status}"
+                status_placeholder.markdown(
+                    f"""
+                    <div style="
+                        background:#5a1414;
+                        padding:20px;
+                        border-radius:12px;
+                        text-align:center;
+                        color:white;
+                        font-size:28px;
+                        font-weight:bold;">
+                        🔴 {status}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
             fatigue_placeholder.metric(
@@ -332,10 +356,10 @@ if st.button("▶ Start Monitoring"):
             cv2.putText(
                 frame,
                 f"{status}",
-                (20,40),
+                (20, 40),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
-                (0,255,0),
+                (0, 255, 0),
                 2
             )
 
@@ -347,7 +371,7 @@ if st.button("▶ Start Monitoring"):
         frame_placeholder.image(
             frame_rgb,
             channels="RGB",
-            use_container_width=True
+            use_container_width=700
         )
 
     cap.release()
