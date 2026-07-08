@@ -22,7 +22,7 @@ MODEL_PATH = os.path.join(
 # LOAD TRAINED MODEL
 
 
-model = joblib.load("MODEL_PATH")
+model = joblib.load(MODEL_PATH)
 
 # EAR FUNCTION
 
