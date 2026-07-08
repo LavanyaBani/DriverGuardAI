@@ -108,264 +108,191 @@ face_mesh = mp_face_mesh.FaceMesh(
 
 LEFT_EYE = [33, 160, 158, 133, 153, 144]
 
-if st.button("▶ Start Monitoring"):
+class VideoProcessor(VideoProcessorBase):
 
-    left_col, right_col = st.columns([2, 1])
+    def __init__(self):
 
-    with right_col:
-        status_placeholder = st.empty()
-        st.markdown("<br>", unsafe_allow_html=True)
+        self.face_mesh = mp_face_mesh.FaceMesh(
+            max_num_faces=1,
+            refine_landmarks=True
+        )
 
-        fatigue_placeholder = st.empty()
-        st.markdown("<br>", unsafe_allow_html=True)
+        self.blink_count = 0
+        self.closed_frames = 0
+        self.closed_eye_frames = 0
+        self.total_frames = 0
 
-        confidence_placeholder = st.empty()
+        self.eye_closed_start = None
+        self.session_start = time.time()
 
-    st.divider()
+        self.EAR_THRESHOLD = 0.20
 
-    e1, e2, e3, e4 = st.columns(4)
+        self.status = "ALERT"
+        self.confidence = 100
+        self.fatigue_score = 0
 
-    ear_placeholder = e1.empty()
-    blink_placeholder = e2.empty()
-    closure_placeholder = e3.empty()
-    perclos_placeholder = e4.empty()
+        self.ear = 0
+        self.blink_rate = 0
+        self.closure_duration = 0
+        self.perclos = 0
 
-    recommendation_placeholder = st.empty()
+        self.recommendation = "Drive Safely"
 
+        self.lock = threading.Lock()
 
-    class VideoProcessor(VideoProcessorBase):
+    def recv(self, frame):
 
-        def __init__(self):
+        img = frame.to_ndarray(format="bgr24")
 
-            self.lock = threading.Lock()
+        self.total_frames += 1
 
-            self.blink_count = 0
-            self.closed_frames = 0
-            self.total_frames = 0
-            self.closed_eye_frames = 0
+        rgb = cv2.cvtColor(
+            img,
+            cv2.COLOR_BGR2RGB
+        )
 
-            self.eye_closed_start = None
-            self.session_start = time.time()
+        results = self.face_mesh.process(rgb)
 
-            self.EAR_THRESHOLD = 0.20
+        if results.multi_face_landmarks:
 
-        def recv(self, frame):
+            face = results.multi_face_landmarks[0]
 
-            img = frame.to_ndarray(format="bgr24")
+            h, w, _ = img.shape
 
-            self.total_frames += 1
+            eye_points = []
 
-            rgb = cv2.cvtColor(
-                img,
-                cv2.COLOR_BGR2RGB
-            )
+            for idx in LEFT_EYE:
 
-            results = face_mesh.process(rgb)
+                landmark = face.landmark[idx]
 
-            status = "ALERT"
+                x = int(landmark.x * w)
+                y = int(landmark.y * h)
 
-            fatigue_score = 0
+                eye_points.append((x, y))
 
-            confidence = 100
-
-            ear = 0
-
-            blink_rate = 0
-
-            closure_duration = 0
-
-            perclos = 0
-
-            if results.multi_face_landmarks:
-
-                face = results.multi_face_landmarks[0]
-
-                h, w, _ = img.shape
-
-                eye_points = []
-
-                for idx in LEFT_EYE:
-
-                    landmark = face.landmark[idx]
-
-                    x = int(landmark.x * w)
-
-                    y = int(landmark.y * h)
-
-                    eye_points.append((x, y))
-
-                    cv2.circle(
-                        img,
-                        (x, y),
-                        2,
-                        (0,255,0),
-                        -1
-                    )
-
-                ear = calculate_ear(eye_points)
-
-                if ear < self.EAR_THRESHOLD:
-
-                    self.closed_frames += 1
-                    self.closed_eye_frames += 1
-
-                    if self.eye_closed_start is None:
-                        self.eye_closed_start = time.time()
-
-                    closure_duration = (
-                        time.time() -
-                        self.eye_closed_start
-                    )
-
-                else:
-
-                    if self.closed_frames >= 2:
-                        self.blink_count += 1
-
-                    self.closed_frames = 0
-                    self.eye_closed_start = None
-
-                elapsed = (
-                    time.time()
-                    - self.session_start
-                ) / 60
-
-                if elapsed > 0:
-
-                    blink_rate = (
-                        self.blink_count /
-                        elapsed
-                    )
-
-                perclos = (
-                    self.closed_eye_frames /
-                    self.total_frames
-                ) * 100
-
-                features = [[
-                    ear,
-                    blink_rate,
-                    closure_duration,
-                    perclos
-                ]]
-
-                prediction = model.predict(features)[0]
-
-                probability = max(
-                    model.predict_proba(features)[0]
-                )
-
-                confidence = round(
-                    probability * 100,
-                    2
-                )
-
-                status = (
-                    "DROWSY"
-                    if prediction == 1
-                    else "ALERT"
-                )
-
-                fatigue_score = calculate_fatigue_score(
-                    ear,
-                    perclos,
-                    closure_duration
-                )
-
-                recommendation = get_recommendation(
-                    fatigue_score
-                )
-
-                with self.lock:
-
-                    status_placeholder.markdown(
-                        f"""
-                        <div style="
-                        background:{
-                        '#163f25'
-                        if status=='ALERT'
-                        else '#5a1414'
-                        };
-                        padding:20px;
-                        border-radius:12px;
-                        text-align:center;
-                        color:white;
-                        font-size:28px;
-                        font-weight:bold;">
-                        {'🟢' if status=='ALERT' else '🔴'}
-                        {status}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                    fatigue_placeholder.metric(
-                        "Fatigue Score",
-                        f"{fatigue_score}%"
-                    )
-
-                    confidence_placeholder.metric(
-                        "Confidence",
-                        f"{confidence}%"
-                    )
-
-                    ear_placeholder.metric(
-                        "EAR",
-                        f"{ear:.2f}"
-                    )
-
-                    blink_placeholder.metric(
-                        "Blink Rate",
-                        f"{blink_rate:.1f}/min"
-                    )
-
-                    closure_placeholder.metric(
-                        "Eye Closure",
-                        f"{closure_duration:.2f}s"
-                    )
-
-                    perclos_placeholder.metric(
-                        "PERCLOS",
-                        f"{perclos:.1f}%"
-                    )
-
-                    recommendation_placeholder.warning(
-                        recommendation
-                    )
-
-                cv2.putText(
+                cv2.circle(
                     img,
-                    status,
-                    (20,40),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
-                    (0,255,0),
-                    2
+                    (x, y),
+                    2,
+                    (0, 255, 0),
+                    -1
                 )
 
-            return av.VideoFrame.from_ndarray(
-                img,
-                format="bgr24"
+            self.ear = calculate_ear(eye_points)
+
+            if self.ear < self.EAR_THRESHOLD:
+
+                self.closed_frames += 1
+                self.closed_eye_frames += 1
+
+                if self.eye_closed_start is None:
+                    self.eye_closed_start = time.time()
+
+                self.closure_duration = (
+                    time.time() - self.eye_closed_start
+                )
+
+            else:
+
+                if self.closed_frames >= 2:
+                    self.blink_count += 1
+
+                self.closed_frames = 0
+                self.eye_closed_start = None
+                self.closure_duration = 0
+
+            elapsed_minutes = (
+                time.time() - self.session_start
+            ) / 60
+
+            if elapsed_minutes > 0:
+
+                self.blink_rate = (
+                    self.blink_count /
+                    elapsed_minutes
+                )
+
+            self.perclos = (
+                self.closed_eye_frames /
+                self.total_frames
+            ) * 100
+
+            features = [[
+                self.ear,
+                self.blink_rate,
+                self.closure_duration,
+                self.perclos
+            ]]
+
+            prediction = model.predict(features)[0]
+
+            probability = max(
+                model.predict_proba(features)[0]
             )
 
+            self.confidence = round(
+                probability * 100,
+                2
+            )
 
-    rtc_config = RTCConfiguration(
-        {
-            "iceServers": [
-                {"urls": ["stun:stun.l.google.com:19302"]}
-            ]
-        }
-    )
+            if prediction == 1:
+                self.status = "DROWSY"
+                color = (0, 0, 255)
+            else:
+                self.status = "ALERT"
+                color = (0, 255, 0)
 
-    with left_col:
+            self.fatigue_score = calculate_fatigue_score(
+                self.ear,
+                self.perclos,
+                self.closure_duration
+            )
 
-        webrtc_streamer(
-            key="driverguard",
-            rtc_configuration=rtc_config,
-            video_processor_factory=VideoProcessor,
-            media_stream_constraints={
-                "video": True,
-                "audio": False
-            },
-            async_processing=True
+            self.recommendation = get_recommendation(
+                self.fatigue_score
+            )
+
+            cv2.putText(
+                img,
+                self.status,
+                (20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                color,
+                2
+            )
+
+            cv2.putText(
+                img,
+                f"EAR : {self.ear:.2f}",
+                (20, 80),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                color,
+                2
+            )
+
+            cv2.putText(
+                img,
+                f"Fatigue : {self.fatigue_score:.1f}",
+                (20, 115),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                color,
+                2
+            )
+
+            cv2.putText(
+                img,
+                f"Confidence : {self.confidence:.1f}%",
+                (20, 150),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                color,
+                2
+            )
+
+        return av.VideoFrame.from_ndarray(
+            img,
+            format="bgr24"
         )
