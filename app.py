@@ -4,6 +4,20 @@ import mediapipe as mp
 import time
 import joblib
 
+import os
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "fatigue_model.pkl"
+)
+
 from src.utils import (
     calculate_ear,
     calculate_fatigue_score,
@@ -79,7 +93,7 @@ st.divider()
 
 
 
-model = joblib.load("models/fatigue_model.pkl")
+model = joblib.load("MODEL_PATH")
 
 
 mp_face_mesh = mp.solutions.face_mesh
