@@ -548,7 +548,7 @@ The system successfully detects fatigue-related eye behavior and provides visual
 
 # 🎓 Project Guide
 
-Dr. Aniket Dixit
+Dr. Ankit Dixit
 
 ---
 
