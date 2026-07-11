@@ -40,7 +40,7 @@ def calculate_fatigue_score(
 def get_recommendation(score):
 
     if score < 30:
-        return "Driver is attentive."
+        return "Driver is focused."
 
     elif score < 60:
         return "Monitor driver condition."

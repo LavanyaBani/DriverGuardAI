@@ -8,6 +8,7 @@ import cv2
 import mediapipe as mp
 import time
 import joblib
+from src.alarm import start_alarm, stop_alarm
 
 import os
 
@@ -161,7 +162,7 @@ if st.button("▶ Start Monitoring"):
 
         results = face_mesh.process(rgb)
 
-        status = "ALERT"
+        status = "FOCUSED"
 
         fatigue_score = 0
 
@@ -266,8 +267,15 @@ if st.button("▶ Start Monitoring"):
             status = (
                 "DROWSY"
                 if prediction == 1
-                else "ALERT"
+                else "FOCUSED"
             )
+            if status == "DROWSY":
+
+                start_alarm()
+
+            else:
+
+                stop_alarm()
 
             fatigue_score = calculate_fatigue_score(
                 ear,
@@ -283,7 +291,7 @@ if st.button("▶ Start Monitoring"):
             # STATUS
             # ------------------------
 
-            if status == "ALERT":
+            if status == "FOCUSED":
 
                 status_placeholder.markdown(
                     f"""
