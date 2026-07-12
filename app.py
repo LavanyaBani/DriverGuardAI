@@ -28,6 +28,25 @@ MODEL_PATH = os.path.join(
 )
 
 
+ARCHITECTURE_IMG = os.path.join(
+    BASE_DIR,
+    "assets",
+    "architecture.png"
+)
+
+ATTENTIVE_IMG = os.path.join(
+    BASE_DIR,
+    "screenshots",
+    "attentive_demo.jpg"
+)
+
+DROWSY_IMG = os.path.join(
+    BASE_DIR,
+    "screenshots",
+    "drowsy_demo.jpg"
+)
+
+
 # PAGE CONFIG
 
 
@@ -68,6 +87,11 @@ st.sidebar.title(" DriverGuard AI")
 
 st.sidebar.markdown("---")
 
+start_monitoring = st.sidebar.button(
+    "▶ Start Monitoring",
+    use_container_width=True
+)
+
 st.sidebar.success("🟢 Camera Connected")
 
 st.sidebar.info(" Fatigue Model Loaded")
@@ -91,6 +115,61 @@ st.markdown(
 
 st.divider()
 
+# =========================
+# LANDING PAGE
+# =========================
+
+if not start_monitoring:
+
+    st.header("About DriverGuard AI")
+
+    st.write("""
+    DriverGuard AI is a real-time fatigue detection system that uses
+    Computer Vision and Machine Learning to monitor driver alertness.
+
+    The system continuously analyzes eye behaviour and predicts whether
+    the driver is focused or drowsy.
+    """)
+
+    st.subheader("Features")
+
+    st.markdown("""
+    - Real-time Eye Tracking
+    - Eye Aspect Ratio (EAR)
+    - Blink Rate Monitoring
+    - Eye Closure Duration
+    - PERCLOS Calculation
+    - Random Forest Prediction
+    - Live Dashboard
+    """)
+
+    st.subheader("System Architecture")
+
+    st.image(
+        ARCHITECTURE_IMG,
+        use_container_width=True
+    )
+
+    st.subheader("Demo Screenshots")
+
+    st.subheader("📸 Demo Screenshots")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.image(
+            ATTENTIVE_IMG,
+            caption="Focused Driver"
+        )
+
+    with col2:
+        st.image(
+            DROWSY_IMG,
+            caption="Drowsy Driver"
+        )
+
+    st.stop()
+
 
 print("BASE_DIR =", BASE_DIR)
 print("MODEL_PATH =", MODEL_PATH)
@@ -107,6 +186,7 @@ face_mesh = mp_face_mesh.FaceMesh(
 )
 
 LEFT_EYE = [33, 160, 158, 133, 153, 144]
+
 
 class VideoProcessor(VideoProcessorBase):
 
@@ -127,7 +207,7 @@ class VideoProcessor(VideoProcessorBase):
 
         self.EAR_THRESHOLD = 0.20
 
-        self.status = "ALERT"
+        self.status = "FOCUSED"
         self.confidence = 100
         self.fatigue_score = 0
 
@@ -239,7 +319,7 @@ class VideoProcessor(VideoProcessorBase):
                 self.status = "DROWSY"
                 color = (0, 0, 255)
             else:
-                self.status = "ALERT"
+                self.status = "FOCUSED"
                 color = (0, 255, 0)
 
             self.fatigue_score = calculate_fatigue_score(
@@ -296,3 +376,115 @@ class VideoProcessor(VideoProcessorBase):
             img,
             format="bgr24"
         )
+
+# =========================
+# WEBRTC CONFIG
+# =========================
+
+
+rtc_configuration = RTCConfiguration(
+    {
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]}
+        ]
+    }
+)
+
+# =========================
+# DASHBOARD LAYOUT
+# =========================
+
+left_col, right_col = st.columns([2, 1])
+
+with left_col:
+
+    ctx = webrtc_streamer(
+        key="driverguard",
+        video_processor_factory=VideoProcessor,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={
+            "video": True,
+            "audio": False
+        },
+        async_processing=True
+    )
+
+with right_col:
+
+    status_placeholder = st.empty()
+
+    fatigue_placeholder = st.empty()
+
+    confidence_placeholder = st.empty()
+
+st.divider()
+
+e1, e2, e3, e4 = st.columns(4)
+
+ear_placeholder = e1.empty()
+
+blink_placeholder = e2.empty()
+
+closure_placeholder = e3.empty()
+
+perclos_placeholder = e4.empty()
+
+recommendation_placeholder = st.empty()
+
+if ctx and ctx.video_processor:
+
+    processor = ctx.video_processor
+
+    status = processor.status
+
+    if status == "ALERT":
+
+        status_placeholder.success(
+            f"🟢 {status}"
+        )
+
+    else:
+
+        status_placeholder.error(
+            f"🔴 {status}"
+        )
+
+    fatigue_placeholder.metric(
+        "Fatigue Score",
+        f"{processor.fatigue_score}%"
+    )
+
+    confidence_placeholder.metric(
+        "Confidence",
+        f"{processor.confidence}%"
+    )
+
+    ear_placeholder.metric(
+        "EAR",
+        f"{processor.ear:.2f}"
+    )
+
+    blink_placeholder.metric(
+        "Blink Rate",
+        f"{processor.blink_rate:.1f}/min"
+    )
+
+    closure_placeholder.metric(
+        "Eye Closure",
+        f"{processor.closure_duration:.2f}s"
+    )
+
+    perclos_placeholder.metric(
+        "PERCLOS",
+        f"{processor.perclos:.1f}%"
+    )
+
+    recommendation_placeholder.warning(
+        processor.recommendation
+    )
+
+else:
+
+    st.info(
+        "Click START above the camera feed."
+    )
