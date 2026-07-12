@@ -540,9 +540,9 @@ The system successfully detects fatigue-related eye behavior and provides visual
 # 👨‍💻 Team Members
 
 - Lavanya Bani
+- Warisha Khan
+- Sukriti Singhal
 - Aafreen
-- Warisha
-- Sukriti
 
 ---
 
