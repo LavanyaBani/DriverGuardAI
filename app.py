@@ -153,7 +153,7 @@ if not start_monitoring:
     st.markdown("##  Demo Screenshots")
 
     st.image(
-        ATTENTIVE_IMAGE,
+        ATTENTIVE_IMG,
         use_container_width=True
     )
 
@@ -176,7 +176,7 @@ if not start_monitoring:
     st.divider()
 
     st.image(
-        DROWSY_IMAGE,
+        DROWSY_IMG,
         use_container_width=True
     )
 
