@@ -150,24 +150,51 @@ if not start_monitoring:
         use_container_width=True
     )
 
-    st.subheader("Demo Screenshots")
+    st.markdown("##  Demo Screenshots")
 
-    st.subheader("📸 Demo Screenshots")
+    st.image(
+        ATTENTIVE_IMAGE,
+        use_container_width=True
+    )
 
-    col1, col2 = st.columns(2)
+    st.success("🟢 Focused Driver Detection")
 
-    with col1:
-        st.image(
-            ATTENTIVE_IMG,
-            caption="Focused Driver"
-        )
+    st.markdown("""
+        ### Focused State
 
-    with col2:
-        st.image(
-            DROWSY_IMG,
-            caption="Drowsy Driver"
-        )
+        The driver's eyes remain open and stable throughout monitoring.
 
+        **Key Indicators**
+        - EAR = 0.24
+        - Blink Rate = 6.8/min
+        - Eye Closure = 0.00s
+        - PERCLOS = 6.5%
+
+        The Random Forest model classifies the driver as **FOCUSED** with high confidence. Since no fatigue indicators are detected, the system maintains normal operation without triggering an alarm.
+    """)
+
+    st.divider()
+
+    st.image(
+        DROWSY_IMAGE,
+        use_container_width=True
+    )
+
+    st.error("🔴 Drowsy Driver Detection")
+
+    st.markdown("""
+        ### Drowsy State
+
+        The driver's eyes remain closed for longer durations, indicating fatigue.
+
+        **Key Indicators**
+        - EAR = 0.08
+        - Blink Rate = 6.5/min
+        - Eye Closure = 2.58s
+        - PERCLOS = 18%
+
+        The Random Forest model classifies the driver as **DROWSY**. The fatigue score increases and the audio alarm is activated to warn the driver and help prevent fatigue-related accidents.
+        """)
     st.stop()
 
 
