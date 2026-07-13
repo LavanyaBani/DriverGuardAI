@@ -395,10 +395,13 @@ cd DriverGuardAI
 
 ---
 
-## Step 4: Create Virtual Environment
+## Step 4: Create Virtual Environment & Upgrade pip
 
 ```bash
-python -m venv venv
+python -m pip install --upgrade pip
+```
+```bash
+py -3.11 -m venv venv
 ```
 
 Activate Environment:
